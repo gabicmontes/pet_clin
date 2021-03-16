@@ -1,10 +1,10 @@
 
 package projetojava;
 
-import classes.Tutor;
-import classes.Paciente;
-import classes.Historico;
-import classes.Persistencia;
+import model.Tutor;
+import model.Paciente;
+import model.Historico;
+import model.Persistencia;
 import gui.FrFuncionario;
 import gui.FrInicial;
 import gui.FrTutor;

@@ -3,9 +3,12 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/projetojava/ProjetoJava.java</file>
-            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/classes/Persistencia.java</file>
-            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/gui/FrFuncionario.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/dao/ProcedimentoDAO.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/gui/FrVacina.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/dao/VacinaDAO.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/gui/FrProcedimento.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/dao/TutorDAO.java</file>
+            <file>file:/C:/Users/Pichau/Documents/NetBeansProjects/PetClin/src/gui/FrTutor.java</file>
         </group>
     </open-files>
 </project-private>

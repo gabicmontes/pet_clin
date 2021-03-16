@@ -1,7 +1,12 @@
 
 package gui;
 
-import classes.Procedimento;
+import dao.ProcedimentoDAO;
+import model.Persistencia;
+import model.Procedimento;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,14 +18,17 @@ import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 public class FrProcedimento extends javax.swing.JFrame {
+    ProcedimentoDAO pDao;
     Procedimento procedimentoEditando;
-    List<Procedimento> lista;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
     
-    public FrProcedimento() {
+    public FrProcedimento() throws SQLException {
         this.procedimentoEditando = null;
-        lista = new ArrayList<>();
+        this.pDao = new ProcedimentoDAO();
         initComponents();
         this.habilitarCampos(false);
+        this.imprimirListaProcedimento();
     }
     
     public void habilitarCampos(boolean flag) {
@@ -32,7 +40,6 @@ public class FrProcedimento extends javax.swing.JFrame {
     public void limparCampos() {
         
         txtNome.setText("");
-        ftxtValidade.setText("");
         txtPreco.setText("");
         txtDescricao.setText("");
     }
@@ -42,22 +49,6 @@ public class FrProcedimento extends javax.swing.JFrame {
         v.setNome(txtNome.getText());
         v.setPreco(Float.parseFloat(txtPreco.getText()));
         v.setDescricao(txtDescricao.getText());
-        v.setId(lista.size()+1);
-        lista.add(v);
-    }
-    
-     public void camposParaObjeto(int id){
-        try { 
-            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
-            Date dataFormatada = formato.parse(ftxtValidade.getText()); 
-            id = id-1;         
-            lista.get(id).setNome(txtNome.getText());
-            lista.get(id).setPreco(Float.parseFloat(txtPreco.getText()));
-            lista.get(id).setDescricao(txtDescricao.getText());
-            
-        } catch (ParseException ex) {
-            Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
      
     public void objetoParaCampos(Procedimento v){
@@ -66,13 +57,12 @@ public class FrProcedimento extends javax.swing.JFrame {
         txtDescricao.setText(v.getDescricao());    
     }
     
-    public void imprimirListaProcedimento() {
-        
+    public void imprimirListaProcedimento() throws SQLException {
         String [] colunas = {"ID", "Nome", "Preço", "Descrição"};
         DefaultTableModel model = new DefaultTableModel(colunas, 0);
-        
-        for(int i=0; i<lista.size(); i++) { 
-            Object [] linha = {lista.get(i).getId(), lista.get(i).getNome(), lista.get(i).getPreco(), lista.get(i).getDescricao()};
+                
+        for(int i=0; i<pDao.getLista().size(); i++) { 
+            Object [] linha = {pDao.getLista().get(i).getId(), pDao.getLista().get(i).getNome(), pDao.getLista().get(i).getPreco(), pDao.getLista().get(i).getDescricao()};
             model.addRow(linha);
         }
         
@@ -80,9 +70,9 @@ public class FrProcedimento extends javax.swing.JFrame {
     }
     
     public Procedimento pesquisaProcedimento(int id) {
-        for(int i=0; i<= lista.size() - 1; i++) {
-            if(lista.get(i).getId() == id) {
-                return lista.get(i);
+        for(int i=0; i<= pDao.getLista().size() - 1; i++) {
+            if(pDao.getLista().get(i).getId() == id) {
+                return pDao.getLista().get(i);
             }
         }
         return null;
@@ -105,10 +95,8 @@ public class FrProcedimento extends javax.swing.JFrame {
         pnlCadastro = new javax.swing.JPanel();
         lblNome = new javax.swing.JLabel();
         txtNome = new javax.swing.JTextField();
-        lblValidade = new javax.swing.JLabel();
         lblEndereco = new javax.swing.JLabel();
         txtPreco = new javax.swing.JTextField();
-        ftxtValidade = new javax.swing.JFormattedTextField();
         lblDescricao = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         txtDescricao = new javax.swing.JTextArea();
@@ -192,8 +180,6 @@ public class FrProcedimento extends javax.swing.JFrame {
             }
         });
 
-        lblValidade.setText("Validade:");
-
         lblEndereco.setText("Preço:");
 
         txtPreco.addActionListener(new java.awt.event.ActionListener() {
@@ -201,12 +187,6 @@ public class FrProcedimento extends javax.swing.JFrame {
                 txtPrecoActionPerformed(evt);
             }
         });
-
-        try {
-            ftxtValidade.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.MaskFormatter("##/##/####")));
-        } catch (java.text.ParseException ex) {
-            ex.printStackTrace();
-        }
 
         lblDescricao.setText("Descrição:");
 
@@ -222,7 +202,7 @@ public class FrProcedimento extends javax.swing.JFrame {
                 .addGroup(pnlCadastroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(txtDescricao, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 833, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(pnlCadastroLayout.createSequentialGroup()
-                        .addGroup(pnlCadastroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addGroup(pnlCadastroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, pnlCadastroLayout.createSequentialGroup()
                                 .addComponent(lblNome, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -230,11 +210,7 @@ public class FrProcedimento extends javax.swing.JFrame {
                                 .addGap(31, 31, 31)
                                 .addComponent(lblEndereco)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(txtPreco, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(44, 44, 44)
-                                .addComponent(lblValidade)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(ftxtValidade))
+                                .addComponent(txtPreco, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(pnlCadastroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addComponent(lblDescricao)
                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 835, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -246,8 +222,6 @@ public class FrProcedimento extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, pnlCadastroLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(pnlCadastroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblValidade)
-                    .addComponent(ftxtValidade, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblNome)
                     .addComponent(txtNome, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lblEndereco)
@@ -273,7 +247,7 @@ public class FrProcedimento extends javax.swing.JFrame {
         ));
         jScrollPane4.setViewportView(tblProcedimento);
 
-        btnListar.setText("Listar Vacinas");
+        btnListar.setText("Listar Procedimentos");
         btnListar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnListarActionPerformed(evt);
@@ -335,11 +309,19 @@ public class FrProcedimento extends javax.swing.JFrame {
         if(tblProcedimento.getSelectedRow() != -1) {
             id = (int) tblProcedimento.getValueAt(tblProcedimento.getSelectedRow(), 0);
             procedimentoEditando = this.pesquisaProcedimento(id);
+            
+            this.limparCampos();
+            this.habilitarCampos(true);
+            this.objetoParaCampos(procedimentoEditando);
+            try {
+                imprimirListaProcedimento();
+            } catch (SQLException ex) {
+                Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            System.out.println("Nenhuma linha selecionada");
         }
-        this.limparCampos();
-        this.habilitarCampos(true);
-        this.objetoParaCampos(procedimentoEditando);
-        imprimirListaProcedimento();
+        
     }//GEN-LAST:event_btnEditarActionPerformed
 
     private void btnNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNovoActionPerformed
@@ -350,16 +332,37 @@ public class FrProcedimento extends javax.swing.JFrame {
     private void btnSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarActionPerformed
         
         if(this.procedimentoEditando == null) {
-                this.camposParaObjeto();
+            
+            Procedimento p = new Procedimento();        
+            p.setNome(txtNome.getText());
+            p.setPreco(Float.parseFloat(txtPreco.getText()));
+            p.setDescricao(txtDescricao.getText());
+            
+            pDao.salvar(p);
+         
+        } else {               
+                int id = this.procedimentoEditando.getId();
+                
+                Procedimento p = new Procedimento();        
+                p.setNome(txtNome.getText());
+                p.setPreco(Float.parseFloat(txtPreco.getText()));
+                p.setDescricao(txtDescricao.getText());
+                
+                this.pDao.salvar(p, id);
+                
+                this.procedimentoEditando = null;           
+            
+            try {
                 this.imprimirListaProcedimento();
-        } else {
-            this.camposParaObjeto(this.procedimentoEditando.getId());
-            this.imprimirListaProcedimento();
+                
+            } catch (SQLException ex) {
+                Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }        
         
         this.limparCampos();
         this.habilitarCampos(false);
-                
+        
     }//GEN-LAST:event_btnSalvarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
@@ -368,17 +371,25 @@ public class FrProcedimento extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirActionPerformed
-        int id;
+            
+        int i;
         if(tblProcedimento.getSelectedRow() != -1) {
-            id = (int) tblProcedimento.getValueAt(tblProcedimento.getSelectedRow(), 0);
-            procedimentoEditando = this.pesquisaProcedimento(id);
-        }
-        this.objetoParaCampos(procedimentoEditando);
-        this.habilitarCampos(false);
-        
-        if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o procedimento clínico " + procedimentoEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
-            lista.remove(procedimentoEditando);
-            imprimirListaProcedimento();
+            i = (int) tblProcedimento.getValueAt(tblProcedimento.getSelectedRow(), 0);
+            procedimentoEditando = this.pesquisaProcedimento(i);
+            int id = this.procedimentoEditando.getId();
+            this.objetoParaCampos(procedimentoEditando);
+            this.habilitarCampos(false);
+            
+            if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o procedimento clínico " + procedimentoEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
+                
+                this.pDao.excluir(id);
+                
+                try {
+                    this.imprimirListaProcedimento();
+                } catch (SQLException ex) {
+                    Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+                }                
+            }
         }
     }//GEN-LAST:event_btnExcluirActionPerformed
 
@@ -391,7 +402,11 @@ public class FrProcedimento extends javax.swing.JFrame {
     }//GEN-LAST:event_txtPrecoActionPerformed
 
     private void btnListarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnListarActionPerformed
-        imprimirListaProcedimento();
+        try {
+            imprimirListaProcedimento();
+        } catch (SQLException ex) {
+            Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnListarActionPerformed
 
 
@@ -402,7 +417,6 @@ public class FrProcedimento extends javax.swing.JFrame {
     private javax.swing.JButton btnListar;
     private javax.swing.JButton btnNovo;
     private javax.swing.JButton btnSalvar;
-    private javax.swing.JFormattedTextField ftxtValidade;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
@@ -413,7 +427,6 @@ public class FrProcedimento extends javax.swing.JFrame {
     private javax.swing.JLabel lblEndereco;
     private javax.swing.JLabel lblNome;
     private javax.swing.JLabel lblTitulo;
-    private javax.swing.JLabel lblValidade;
     private javax.swing.JPanel pnlCadastro;
     private javax.swing.JTable tblProcedimento;
     private javax.swing.JTextArea txtDescricao;

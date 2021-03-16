@@ -5,6 +5,11 @@
  */
 package gui;
 
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author Pichau
@@ -112,18 +117,37 @@ public class FrInicial extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnCadastrarTutorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCadastrarTutorActionPerformed
-        FrTutor tela1 = new FrTutor();
-        tela1.setVisible(true);
+        FrTutor tela1;
+        try {
+            tela1 = new FrTutor();
+            tela1.setVisible(true);
+        } catch (SQLException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnCadastrarTutorActionPerformed
 
     private void btnCadastrarFuncionarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCadastrarFuncionarioActionPerformed
-        FrFuncionario tela1 = new FrFuncionario();
-        tela1.setVisible(true);
+        FrFuncionario tela1;
+        try {
+            tela1 = new FrFuncionario();
+            tela1.setVisible(true);
+        } catch (SQLException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnCadastrarFuncionarioActionPerformed
 
     private void btnCadastrarProcedimentoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCadastrarProcedimentoActionPerformed
-        FrProcedimento tela1 = new FrProcedimento();
-        tela1.setVisible(true);
+        FrProcedimento tela1;
+        try {
+            tela1 = new FrProcedimento();
+            tela1.setVisible(true);
+        } catch (SQLException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnCadastrarProcedimentoActionPerformed
 
     private void btnCadastrarVacina1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCadastrarVacina1ActionPerformed
@@ -131,8 +155,15 @@ public class FrInicial extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCadastrarVacina1ActionPerformed
 
     private void btnCadastrarVacinaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCadastrarVacinaActionPerformed
-        FrVacina tela1 = new FrVacina();
-        tela1.setVisible(true);
+        FrVacina tela1;
+        try {
+            tela1 = new FrVacina();
+            tela1.setVisible(true);
+        } catch (SQLException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParseException ex) {
+            Logger.getLogger(FrInicial.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnCadastrarVacinaActionPerformed
 
     /**

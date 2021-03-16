@@ -1,7 +1,9 @@
 
 package gui;
 
-import classes.Funcionario;
+import model.Funcionario;
+import model.Persistencia;
+import model.Procedimento;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -18,16 +20,46 @@ public class FrFuncionario extends javax.swing.JFrame {
     
     Funcionario funcionarioEditando;
     List<Funcionario> lista;
-    
-    Connection conexao = null;
-    PreparedStatement pst = null;
+       
+    PreparedStatement ps = null;
     ResultSet rs = null;
     
-    public FrFuncionario() {
+    public FrFuncionario() throws SQLException, ParseException {
         this.funcionarioEditando = null;
         lista = new ArrayList<>();
         initComponents();
         this.habilitarCampos(false);
+        this.iniciaLista();
+    }
+    
+    public void iniciaLista() throws SQLException, ParseException {
+        try {
+            ps = Persistencia.conectar().prepareStatement("Select * from funcionario");
+            rs = ps.executeQuery(); 
+            
+            while(rs.next()) {
+                String dados[] = {rs.getString("idFuncionario"), rs.getString("nomeFuncionario"), rs.getString("cargoFuncionario"), rs.getString("salarioFuncionario"), rs.getString("sexoFuncionario"), rs.getString("dataNasc"), rs.getString("cpfFuncionario"), rs.getString("enderecoFuncionario"), rs.getString("telefoneFuncionario")}; 
+                Funcionario v = new Funcionario();  
+                v.setId(Integer.parseInt(dados[0]));                   
+                v.setNome(dados[1]);
+                v.setCargo(dados[2]);
+                v.setSalario(Float.parseFloat(dados[3]));
+                v.setSexo(dados[4]);
+                
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+                Date dataFormatada = formato.parse(dados[5]);                 
+                v.setDataNasc(dataFormatada);
+                
+                v.setCpf(dados[6]); 
+                v.setEndereco(dados[7]); 
+                v.setTelefone(dados[8]); 
+                
+                lista.add(v);
+            }           
+        } catch (SQLException ex) {
+            Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        imprimirListaFuncionario();
     }
     
     public void habilitarCampos(boolean flag) {
@@ -470,15 +502,19 @@ public class FrFuncionario extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEditarActionPerformed
+        
         int id;
+        
         if(tblFuncionario.getSelectedRow() != -1) {
             id = (int) tblFuncionario.getValueAt(tblFuncionario.getSelectedRow(), 0);
             funcionarioEditando = this.pesquisaFuncionario(id);
-        }
-        this.limparCampos();
-        this.habilitarCampos(true);
-        this.objetoParaCampos(funcionarioEditando);
-        imprimirListaFuncionario();
+            this.limparCampos();
+            this.habilitarCampos(true);
+            this.objetoParaCampos(funcionarioEditando);
+        } else {
+            System.out.println("Nenhuma linha selecionada");
+        }        
+        
     }//GEN-LAST:event_btnEditarActionPerformed
 
     private void btnNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNovoActionPerformed
@@ -489,15 +525,91 @@ public class FrFuncionario extends javax.swing.JFrame {
     private void btnSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarActionPerformed
         
         if(this.funcionarioEditando == null) {
-                this.camposParaObjeto();
-                this.imprimirListaFuncionario();
-        } else {
-            this.camposParaObjeto(this.funcionarioEditando.getId());
+            
+            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+            Date dataFormatada; 
+            try {
+                dataFormatada = formato.parse(ftxtDataNascimento.getText());
+                Funcionario v = new Funcionario();        
+                v.setNome(txtNome.getText());
+                v.setCargo(txtCargo.getText());       
+                v.setSexo(cbxSexo.getItemAt(0));
+                v.setSalario(Float.parseFloat(txtSalario.getText()));
+                v.setDataNasc(dataFormatada);
+                v.setCpf(ftxtCpf.getText()); 
+                v.setEndereco(txtEndereco.getText()); 
+                v.setTelefone(ftxtTelefone.getText());           
+            
+                lista.add(v);        
+           
+                ps = Persistencia.conectar().prepareStatement("Insert into funcionario (nomeFuncionario, cargoFuncionario, salarioFuncionario, sexoFuncionario, dataNasc, cpfFuncionario, enderecoFuncionario, telefoneFuncionario) values (?,?,?,?,?,?,?,?)");
+                
+                ps.setString(1, v.getNome());
+                ps.setString(2, v.getCargo());
+                ps.setFloat(3, v.getSalario());
+                ps.setString(4, v.getSexo());
+                ps.setString(5, ftxtDataNascimento.getText());
+                ps.setString(6, v.getCpf());
+                ps.setString(7, v.getEndereco());
+                ps.setString(8, v.getTelefone());
+                
+                ps.executeUpdate();
+                
+                lista = new ArrayList<>();
+                this.iniciaLista();
+        
+            } catch (SQLException ex) {
+                Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParseException ex) {            
+                Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+            }
             this.imprimirListaFuncionario();
+            
+        } else {
+            try {                
+                int id = this.funcionarioEditando.getId();
+                ps = Persistencia.conectar().prepareStatement("update funcionario set nomeFuncionario = ? , cargoFuncionario = ?, salarioFuncionario = ?, sexoFuncionario = ?, dataNasc = ?, cpfFuncionario = ?, enderecoFuncionario = ?, telefoneFuncionario = ? where idFuncionario = ? ");
+                
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+                Date dataFormatada; 
+                dataFormatada = formato.parse(ftxtDataNascimento.getText());
+                Funcionario v = new Funcionario();        
+                v.setNome(txtNome.getText());
+                v.setCargo(txtCargo.getText());       
+                v.setSexo(cbxSexo.getItemAt(0));
+                v.setSalario(Float.parseFloat(txtSalario.getText()));
+                v.setDataNasc(dataFormatada);
+                v.setCpf(ftxtCpf.getText()); 
+                v.setEndereco(txtEndereco.getText()); 
+                v.setTelefone(ftxtTelefone.getText());       
+                
+                lista.add(v);                       
+                
+                ps.setString(1, v.getNome());
+                ps.setString(2, v.getCargo());
+                ps.setFloat(3, v.getSalario());
+                ps.setString(4, v.getSexo());
+                ps.setString(5, ftxtDataNascimento.getText());
+                ps.setString(6, v.getCpf());
+                ps.setString(7, v.getEndereco());
+                ps.setString(8, v.getTelefone());
+                ps.setInt(9, id);
+                
+                ps.executeUpdate();
+                
+                this.funcionarioEditando = null;
+                lista = new ArrayList<>();
+                this.iniciaLista();
+                
+            } catch (SQLException ex) {
+                Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParseException ex) {
+                Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }        
         
         this.limparCampos();
-        this.habilitarCampos(false);       
+        this.habilitarCampos(false);    
     }//GEN-LAST:event_btnSalvarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
@@ -506,17 +618,29 @@ public class FrFuncionario extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirActionPerformed
-        int id;
-        if(tblFuncionario.getSelectedRow() != -1) {
-            id = (int) tblFuncionario.getValueAt(tblFuncionario.getSelectedRow(), 0);
-            funcionarioEditando = this.pesquisaFuncionario(id);
-        }
-        this.objetoParaCampos(funcionarioEditando);
-        this.habilitarCampos(false);
         
-        if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o funcionario " + funcionarioEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
-            lista.remove(funcionarioEditando);
-            imprimirListaFuncionario();
+        int i;
+        if(tblFuncionario.getSelectedRow() != -1) {
+            i = (int) tblFuncionario.getValueAt(tblFuncionario.getSelectedRow(), 0);
+            funcionarioEditando = this.pesquisaFuncionario(i);
+            int id = this.funcionarioEditando.getId();
+            this.objetoParaCampos(funcionarioEditando);
+            this.habilitarCampos(false);
+            
+            if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o funcionario " + funcionarioEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
+                try {
+                    ps = Persistencia.conectar().prepareStatement("delete from funcionario where idFuncionario = ? ");
+                    ps.setInt(1, id);
+                    ps.executeUpdate();
+                    lista = new ArrayList<>();
+                    this.iniciaLista();
+                    
+                } catch (SQLException ex) {
+                    Logger.getLogger(FrProcedimento.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (ParseException ex) {
+                    Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+                }              
+            }
         }
     }//GEN-LAST:event_btnExcluirActionPerformed
 

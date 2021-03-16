@@ -1,5 +1,5 @@
 
-package classes;
+package model;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,9 +15,10 @@ public class Persistencia {
         }
     }
     
-    public Connection conectar(){
+    public static Connection conectar(){
         if(conexao == null) {
             new Persistencia();
+            System.out.println("Conexão OK");
         }
         return conexao;
     }

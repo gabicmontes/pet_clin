@@ -1,7 +1,14 @@
 
 package gui;
 
-import classes.Tutor;
+import dao.ProcedimentoDAO;
+import dao.TutorDAO;
+import model.Funcionario;
+import model.Persistencia;
+import model.Tutor;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,13 +22,16 @@ import javax.swing.table.DefaultTableModel;
 public class FrTutor extends javax.swing.JFrame {
     
     Tutor tutorEditando;
-    List<Tutor> lista;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    TutorDAO tDao;
     
-    public FrTutor() {
+    public FrTutor() throws SQLException, ParseException {
         this.tutorEditando = null;
-        lista = new ArrayList<>();
+        tDao = new TutorDAO();
         initComponents();
         this.habilitarCampos(false);
+        this. imprimirListaTutores();
     }
     
     public void habilitarCampos(boolean flag) {
@@ -50,31 +60,12 @@ public class FrTutor extends javax.swing.JFrame {
             tutor.setEndereco(txtEndereco.getText());
             tutor.setSexo(cbxSexo.getItemAt(0));
             tutor.setTelefone(ftxtTelefone.getText());
-            tutor.setId(lista.size()+1);
+            tutor.setId(tDao.getLista().size()+1);
         } catch (ParseException ex) {
             Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        lista.add(tutor);
-    }
-    
-    public void camposParaObjeto(int id){
-        try { 
-            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
-            Date dataFormatada = formato.parse(ftxtDataNascimento.getText()); 
-            id = id-1;
-            System.out.println("id-1");            
-            lista.get(id).setNome(txtNome.getText());
-            lista.get(id).setDataNasc(dataFormatada);
-            lista.get(id).setCpf(ftxtCpf.getText());
-            lista.get(id).setEndereco(txtEndereco.getText());
-            lista.get(id).setSexo(cbxSexo.getItemAt(0));
-            lista.get(id).setTelefone(ftxtTelefone.getText());
-            lista.get(id).setId(lista.size()+1);
-            
-        } catch (ParseException ex) {
-            Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        tDao.getLista().add(tutor);
     }
     
     public void objetoParaCampos(Tutor tutor){
@@ -87,16 +78,16 @@ public class FrTutor extends javax.swing.JFrame {
         ftxtDataNascimento.setText(dataFormatada);       
     }
     
-    public void imprimirListaTutores() {
+    public void imprimirListaTutores() throws SQLException {
         
         String [] colunas = {"ID", "Nome", "Data de Nascimento", "CPF", "Telefone", "Endereço"};
         DefaultTableModel model = new DefaultTableModel(colunas, 0);
         
-        for(int i=0; i<lista.size(); i++) {
+        for(int i=0; i<tDao.getLista().size(); i++) {
             SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");  
-            String dataFormatada = formato.format(lista.get(i).getDataNasc()); 
-            if(lista.get(i).getId() != lista.get(i).getId()+1) {
-                Object [] linha = {lista.get(i).getId(), lista.get(i).getNome(), dataFormatada, lista.get(i).getCpf(), lista.get(i).getTelefone(), lista.get(i).getEndereco()};
+            String dataFormatada = formato.format(tDao.getLista().get(i).getDataNasc()); 
+            if(tDao.getLista().get(i).getId() != tDao.getLista().get(i).getId()+1) {
+                Object [] linha = {tDao.getLista().get(i).getId(), tDao.getLista().get(i).getNome(), dataFormatada, tDao.getLista().get(i).getCpf(), tDao.getLista().get(i).getTelefone(), tDao.getLista().get(i).getEndereco()};
                 model.addRow(linha);
             }
         }
@@ -105,9 +96,9 @@ public class FrTutor extends javax.swing.JFrame {
     }
     
     public Tutor pesquisaTutor(int id) {
-        for(int i=0; i<= lista.size() - 1; i++) {
-            if(lista.get(i).getId() == id) {
-                return lista.get(i);
+        for(int i=0; i<= tDao.getLista().size() - 1; i++) {
+            if(tDao.getLista().get(i).getId() == id) {
+                return tDao.getLista().get(i);
             }
         }
         return null;
@@ -446,8 +437,12 @@ public class FrTutor extends javax.swing.JFrame {
         this.limparCampos();
         this.habilitarCampos(true);
         this.objetoParaCampos(tutorEditando);
-        //lista.remove(tutorEditando);
-        imprimirListaTutores();
+        try {
+            //lista.remove(tutorEditando);
+            imprimirListaTutores();
+        } catch (SQLException ex) {
+            Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnEditarActionPerformed
 
     private void btnNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNovoActionPerformed
@@ -457,21 +452,59 @@ public class FrTutor extends javax.swing.JFrame {
 
     private void btnSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarActionPerformed
         
-        if(validaCpf(ftxtCpf.getText())) {
-            if(this.tutorEditando == null) {
-                this.camposParaObjeto();
-                this.imprimirListaTutores();
-            } else {
-                this.camposParaObjeto(this.tutorEditando.getId());
-                this.imprimirListaTutores();
-            }        
+       if(this.tutorEditando == null) {
+            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+            Date dataFormatada; 
+            try {
+                dataFormatada = formato.parse(ftxtDataNascimento.getText());
+                Tutor v = new Tutor();        
+                v.setNome(txtNome.getText());      
+                v.setSexo(cbxSexo.getItemAt(0));
+                v.setDataNasc(dataFormatada);
+                v.setCpf(ftxtCpf.getText()); 
+                v.setEndereco(txtEndereco.getText()); 
+                v.setTelefone(ftxtTelefone.getText());           
+            
+                tDao.salvar(v);
         
-            this.limparCampos();
-            this.habilitarCampos(false);
-        
-        } else {            
-            JOptionPane.showMessageDialog(rootPane, "CPF inválido");
+            } catch (ParseException ex) {            
+                Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+            }
+           try {
+               this.imprimirListaTutores();
+           } catch (SQLException ex) {
+               Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
+           }
+            
+        } else {
+            try {                
+                int id = this.tutorEditando.getId();
+                
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+                Date dataFormatada; 
+                dataFormatada = formato.parse(ftxtDataNascimento.getText());
+                Tutor v = new Tutor();        
+                v.setNome(txtNome.getText());      
+                v.setSexo(cbxSexo.getItemAt(0));
+                v.setDataNasc(dataFormatada);
+                v.setCpf(ftxtCpf.getText()); 
+                v.setEndereco(txtEndereco.getText()); 
+                v.setTelefone(ftxtCpf.getText());       
+                
+                 tDao.salvar(v, id);   
+                
+                this.tutorEditando = null;
+                this.imprimirListaTutores();
+                
+            } catch (ParseException ex) {
+                Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SQLException ex) {
+               Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
+           }
         }        
+        
+        this.limparCampos();
+        this.habilitarCampos(false);         
     }//GEN-LAST:event_btnSalvarActionPerformed
 
     private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCancelarActionPerformed
@@ -480,17 +513,24 @@ public class FrTutor extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirActionPerformed
-        int id;
-        if(tblTutor.getSelectedRow() != -1) {
-            id = (int) tblTutor.getValueAt(tblTutor.getSelectedRow(), 0);
-            tutorEditando = this.pesquisaTutor(id);
-        }
-        this.objetoParaCampos(tutorEditando);
-        this.habilitarCampos(false);
         
-        if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o(a) tutor(a) " + tutorEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
-            lista.remove(tutorEditando);
-            imprimirListaTutores();
+        int i;
+        if(tblTutor.getSelectedRow() != -1) {
+            i = (int) tblTutor.getValueAt(tblTutor.getSelectedRow(), 0);
+            tutorEditando = this.pesquisaTutor(i);
+            int id = this.tutorEditando.getId();
+            this.objetoParaCampos(tutorEditando);
+            this.habilitarCampos(false);
+            
+            if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir o tutor " + tutorEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
+                
+                this.tDao.excluir(id);
+                try {            
+                    this.imprimirListaTutores();
+                } catch (SQLException ex) {
+                    Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
     }//GEN-LAST:event_btnExcluirActionPerformed
 
@@ -511,7 +551,11 @@ public class FrTutor extends javax.swing.JFrame {
     }//GEN-LAST:event_txtEnderecoActionPerformed
 
     private void btnListarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnListarActionPerformed
-        imprimirListaTutores();
+        try {
+            imprimirListaTutores();
+        } catch (SQLException ex) {
+            Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnListarActionPerformed
 
 

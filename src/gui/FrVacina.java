@@ -1,7 +1,14 @@
 
 package gui;
 
-import classes.Vacina;
+
+import dao.VacinaDAO;
+import model.Persistencia;
+import model.Tutor;
+import model.Vacina;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,15 +20,20 @@ import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 public class FrVacina extends javax.swing.JFrame {
-    Vacina vacinaEditando;
-    List<Vacina> lista;
     
-    public FrVacina() {
+    VacinaDAO vDao;    
+    Vacina vacinaEditando;
+    
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    
+    public FrVacina() throws SQLException, ParseException {
         this.vacinaEditando = null;
-        lista = new ArrayList<>();
         initComponents();
+        this.vDao = new VacinaDAO();
         this.habilitarCampos(false);
     }
+    
     
     public void habilitarCampos(boolean flag) {
         for(int i=0; i < pnlCadastro.getComponents().length; i++){
@@ -46,27 +58,11 @@ public class FrVacina extends javax.swing.JFrame {
             v.setValidade(dataFormatada);
             v.setPreco(Float.parseFloat(txtPreco.getText()));
             v.setDescricao(txtDescricao.getText());
-            v.setId(lista.size()+1);
         } catch (ParseException ex) {
             Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        lista.add(v);
     }
-    public void camposParaObjeto(int id){
-        try { 
-            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
-            Date dataFormatada = formato.parse(ftxtValidade.getText()); 
-            id = id-1;         
-            lista.get(id).setNome(txtNome.getText());
-            lista.get(id).setValidade(dataFormatada);
-            lista.get(id).setPreco(Float.parseFloat(txtPreco.getText()));
-            lista.get(id).setDescricao(txtDescricao.getText());
-            
-        } catch (ParseException ex) {
-            Logger.getLogger(FrTutor.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+    
     public void objetoParaCampos(Vacina v){
         txtNome.setText(v.getNome());
         txtPreco.setText(""+v.getPreco());        
@@ -76,15 +72,15 @@ public class FrVacina extends javax.swing.JFrame {
         ftxtValidade.setText(dataFormatada);       
     }
     
-    public void imprimirListaVacina() {
+    public void imprimirListaVacina() throws SQLException {
         
         String [] colunas = {"ID", "Nome", "Validade", "Preço", "Descrição"};
         DefaultTableModel model = new DefaultTableModel(colunas, 0);
         
-        for(int i=0; i<lista.size(); i++) {
+        for(int i=0; i<vDao.getLista().size(); i++) {
             SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");  
-            String dataFormatada = formato.format(lista.get(i).getValidade()); 
-            Object [] linha = {lista.get(i).getId(), lista.get(i).getNome(), dataFormatada, lista.get(i).getPreco(), lista.get(i).getDescricao()};
+            String dataFormatada = formato.format(vDao.getLista().get(i).getValidade()); 
+            Object [] linha = {vDao.getLista().get(i).getId(), vDao.getLista().get(i).getNome(), dataFormatada, vDao.getLista().get(i).getPreco(), vDao.getLista().get(i).getDescricao()};
             model.addRow(linha);
         }
         
@@ -92,9 +88,9 @@ public class FrVacina extends javax.swing.JFrame {
     }
     
     public Vacina pesquisaVacina(int id) {
-        for(int i=0; i<= lista.size() - 1; i++) {
-            if(lista.get(i).getId() == id) {
-                return lista.get(i);
+        for(int i=0; i<= vDao.getLista().size() - 1; i++) {
+            if(vDao.getLista().get(i).getId() == id) {
+                return vDao.getLista().get(i);
             }
         }
         return null;
@@ -347,8 +343,12 @@ public class FrVacina extends javax.swing.JFrame {
         this.limparCampos();
         this.habilitarCampos(true);
         this.objetoParaCampos(vacinaEditando);
-        //lista.remove(tutorEditando);
-        imprimirListaVacina();
+        try {
+            //lista.remove(tutorEditando);
+            imprimirListaVacina();
+        } catch (SQLException ex) {
+            Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnEditarActionPerformed
 
     private void btnNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNovoActionPerformed
@@ -359,15 +359,46 @@ public class FrVacina extends javax.swing.JFrame {
     private void btnSalvarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarActionPerformed
        
         if(this.vacinaEditando == null) {
-                this.camposParaObjeto();
-                this.imprimirListaVacina();
-        } else {
-            this.camposParaObjeto(this.vacinaEditando.getId());
-            this.imprimirListaVacina();
+            SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+            Date dataFormatada; 
+            try {
+                dataFormatada = formato.parse(ftxtValidade.getText());
+                Vacina v = new Vacina();        
+                v.setNome(txtNome.getText());  
+                v.setPreco(Float.parseFloat(txtPreco.getText())); 
+                v.setValidade(dataFormatada);
+                v.setDescricao(txtDescricao.getText());           
+                    
+                vDao.salvar(v);
+        
+            } catch (ParseException ex) {            
+                Logger.getLogger(FrFuncionario.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+        } else {              
+                int id = this.vacinaEditando.getId();
+            try {    
+                SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");         
+                Date dataFormatada; 
+            
+                dataFormatada = formato.parse(ftxtValidade.getText());
+            
+                Vacina v = new Vacina();        
+                v.setNome(txtNome.getText()); 
+                v.setPreco(Float.parseFloat(txtPreco.getText())); 
+                v.setValidade(dataFormatada);
+                v.setDescricao(txtDescricao.getText()); 
+                vDao.salvar(v, id); 
+                this.vacinaEditando = null;
+                
+            } catch (ParseException ex) {
+                Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
+            }   
+                
         }        
         
         this.limparCampos();
-        this.habilitarCampos(false);
+        this.habilitarCampos(false);       
                 
     }//GEN-LAST:event_btnSalvarActionPerformed
 
@@ -377,17 +408,28 @@ public class FrVacina extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCancelarActionPerformed
 
     private void btnExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirActionPerformed
-        int id;
+        int i;
         if(tblVacina.getSelectedRow() != -1) {
-            id = (int) tblVacina.getValueAt(tblVacina.getSelectedRow(), 0);
-            vacinaEditando = this.pesquisaVacina(id);
-        }
-        this.objetoParaCampos(vacinaEditando);
-        this.habilitarCampos(false);
-        
-        if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir a vacina " + vacinaEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
-            lista.remove(vacinaEditando);
-            imprimirListaVacina();
+            i = (int) tblVacina.getValueAt(tblVacina.getSelectedRow(), 0);
+            vacinaEditando = this.pesquisaVacina(i);
+            int id = this.vacinaEditando.getId();
+            this.objetoParaCampos(vacinaEditando);
+            this.habilitarCampos(false);
+            
+            if(JOptionPane.showConfirmDialog(rootPane, "Deseja realmente exluir a vacina " + vacinaEditando.getNome() + " ?", "Sistema PETClin", JOptionPane.YES_NO_OPTION) == 0) {
+                
+                try {
+                    this.vDao.excluir(id);
+                } catch (ParseException ex) {
+                    Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+                try {  
+                    this.imprimirListaVacina();
+                } catch (SQLException ex) {
+                    Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
     }//GEN-LAST:event_btnExcluirActionPerformed
 
@@ -400,7 +442,11 @@ public class FrVacina extends javax.swing.JFrame {
     }//GEN-LAST:event_txtPrecoActionPerformed
 
     private void btnListarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnListarActionPerformed
-        imprimirListaVacina();
+        try {
+            imprimirListaVacina();
+        } catch (SQLException ex) {
+            Logger.getLogger(FrVacina.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btnListarActionPerformed
 
 
